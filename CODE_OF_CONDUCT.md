@@ -1,8 +1,8 @@
-\# Code of Conduct
+# Code of Conduct
 
 
 
-\## Our Pledge
+## Our Pledge
 
 
 
@@ -10,23 +10,23 @@ We pledge to make participation in our project a harassment-free experience for 
 
 
 
-\## Our Standards
+## Our Standards
 
 
 
-\- Be respectful
+- Be respectful
 
-\- Be inclusive
+- Be inclusive
 
-\- Be collaborative
+- Be collaborative
 
-\- Focus on what is best for the community
+- Focus on what is best for the community
 
-\- Show empathy towards others
+- Show empathy towards others
 
 
 
-\## Enforcement
+## Enforcement
 
 
 
@@ -34,7 +34,7 @@ Instances of abusive behavior may be reported to the project maintainers.
 
 
 
-\## Attribution
+## Attribution
 
 
 
