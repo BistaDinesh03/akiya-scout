@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 # Known logo/branding patterns to reject
 LOGO_PATTERNS = [
     r'logo',
+    r'logo\.jpg',
+    r'logo\.png',
+    r'logo-footer',
+    r'logo-header',
     r'sitelogo',
     r'header',
     r'banner',
@@ -48,8 +52,6 @@ _rejected_url_cache: Set[str] = set()
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 IMAGE_TIMEOUT = 5  # seconds
-MIN_IMAGE_WIDTH = 200  # Minimum reasonable property image width
-MIN_IMAGE_HEIGHT = 150  # Minimum reasonable property image height
 
 
 def is_logo_or_branding(image_url: str) -> bool:
@@ -72,36 +74,28 @@ def has_allowed_extension(image_url: str) -> bool:
 def validate_image_url(image_url: str) -> bool:
     """
     Validate that an image URL is a real property image.
-    
-    Returns:
-        True if valid, False if should be rejected
     """
     if not image_url:
         return False
     
-    # Check cache
     if image_url in _validated_url_cache:
         return True
     if image_url in _rejected_url_cache:
         return False
     
-    # Check for logo/branding patterns
     if is_logo_or_branding(image_url):
         _rejected_url_cache.add(image_url)
         return False
     
-    # Check extension
     if not has_allowed_extension(image_url):
-        # Some WordPress images don't have extension in URL
         if 'wp-content/uploads' not in image_url:
             _rejected_url_cache.add(image_url)
             return False
     
-    # Validate HTTP response
     try:
         response = requests.head(image_url, timeout=IMAGE_TIMEOUT, allow_redirects=True)
         
-        if response.status_code == 405:  # HEAD not allowed, try GET
+        if response.status_code == 405:
             response = requests.get(image_url, timeout=IMAGE_TIMEOUT, stream=True)
         
         if response.status_code != 200:
@@ -138,3 +132,10 @@ def extract_best_image(images: list) -> Optional[str]:
             return image_url
     
     return None
+
+
+def clear_image_cache():
+    """Clear all cached image validation results."""
+    _validated_url_cache.clear()
+    _rejected_url_cache.clear()
+    logger.info("Image validation cache cleared")

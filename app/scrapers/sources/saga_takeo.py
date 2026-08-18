@@ -44,15 +44,6 @@ class SagaTakeoScraper(BaseScraper):
     def fetch(self, url: str) -> str:
         """
         Fetch content from URL with rate limiting.
-        
-        Args:
-            url: The URL to fetch
-            
-        Returns:
-            Content as string
-            
-        Raises:
-            FetchError: If fetching fails
         """
         self._rate_limit()
         try:
@@ -60,7 +51,6 @@ class SagaTakeoScraper(BaseScraper):
             response = self.session.get(url, timeout=self.timeout)
             response.raise_for_status()
             return response.text
-            
         except requests.exceptions.Timeout as e:
             raise FetchError(f"Timeout after {self.timeout} seconds: {e}")
         except requests.exceptions.RequestException as e:
@@ -69,25 +59,13 @@ class SagaTakeoScraper(BaseScraper):
             raise FetchError(f"Unexpected fetch error: {e}")
     
     def fetch_json(self, url: str) -> Any:
-        """
-        Fetch JSON data from URL with rate limiting.
-        
-        Args:
-            url: The URL to fetch
-            
-        Returns:
-            JSON data
-            
-        Raises:
-            FetchError: If fetching fails
-        """
+        """Fetch JSON data from URL with rate limiting."""
         self._rate_limit()
         try:
             logger.debug(f"[{self.get_source_name()}] Fetching JSON: {url}")
             response = self.session.get(url, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
-            
         except requests.exceptions.Timeout as e:
             raise FetchError(f"Timeout after {self.timeout} seconds: {e}")
         except requests.exceptions.RequestException as e:
@@ -98,16 +76,7 @@ class SagaTakeoScraper(BaseScraper):
             raise FetchError(f"Unexpected fetch error: {e}")
     
     def fetch_listings(self, page: int = 1, per_page: int = 100) -> List[Dict[str, Any]]:
-        """
-        Fetch property listings from WordPress API.
-        
-        Args:
-            page: Page number
-            per_page: Number of items per page
-            
-        Returns:
-            List of raw property data from API
-        """
+        """Fetch property listings from WordPress API."""
         url = f"{self.API_URL}?page={page}&per_page={per_page}&_embed"
         logger.info(f"[{self.get_source_name()}] Fetching listings page {page}")
         
@@ -116,32 +85,20 @@ class SagaTakeoScraper(BaseScraper):
         if isinstance(data, list):
             return data
         elif isinstance(data, dict) and 'code' in data:
-            # WordPress error response
             raise FetchError(f"API error: {data.get('message', 'Unknown error')}")
         return []
     
     def parse(self, html: str) -> List[Dict[str, Any]]:
-        """
-        Parse HTML content from a single property page.
-        
-        Args:
-            html: HTML content of a property page
-            
-        Returns:
-            List with single raw property data dict
-        """
+        """Parse HTML content from a single property page."""
         try:
             soup = BeautifulSoup(html, 'html.parser')
             
-            # Extract title
             title_elem = soup.find('h1') or soup.find('h2')
             title = title_elem.get_text(strip=True) if title_elem else ""
             
-            # Get all text lines
             text = soup.get_text('\n', strip=True)
             lines = [l.strip() for l in text.split('\n') if l.strip()]
             
-            # Extract property details from text
             raw_data = {
                 'title': title,
                 'price': self._extract_price(lines),
@@ -170,15 +127,12 @@ class SagaTakeoScraper(BaseScraper):
         """Extract price in yen from text lines."""
         for i, line in enumerate(lines):
             if '希望価格' in line or '価格' in line:
-                # Check next few lines for price
                 for j in range(i + 1, min(i + 4, len(lines))):
                     price_text = lines[j]
                     
-                    # Skip if it's just a label
                     if price_text in ['万円', '円']:
                         continue
                     
-                    # Get unit from current line or next line
                     unit_text = ''
                     if '万円' in price_text:
                         unit_text = '万円'
@@ -187,25 +141,20 @@ class SagaTakeoScraper(BaseScraper):
                     elif j + 1 < len(lines) and lines[j + 1] in ['万円', '円']:
                         unit_text = lines[j + 1]
                     
-                    # Extract number from price text (supports multiple commas)
                     match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)', price_text)
                     if not match:
                         continue
                     
                     number = match.group(1).replace(',', '')
                     
-                    # Convert based on unit
                     if unit_text == '万円':
-                        man_value = float(number)
-                        return int(man_value * 10000)
+                        return int(float(number) * 10000)
                     elif unit_text == '円':
                         return int(float(number))
                     elif re.match(r'^\d+(?:,\d+)*$', price_text):
-                        # Standalone number - check next line for unit
                         if j + 1 < len(lines):
                             if lines[j + 1] == '万円':
-                                man_value = float(number)
-                                return int(man_value * 10000)
+                                return int(float(number) * 10000)
                             elif lines[j + 1] == '円':
                                 return int(float(number))
         return None
@@ -268,7 +217,6 @@ class SagaTakeoScraper(BaseScraper):
     def _extract_description(self, lines: List[str]) -> Optional[str]:
         """Extract description from text lines."""
         descriptions = []
-        # Look for description after 掲載日 and before エリア
         in_description = False
         for line in lines:
             if '掲載日' in line:
@@ -283,41 +231,62 @@ class SagaTakeoScraper(BaseScraper):
         return ' '.join(descriptions) if descriptions else None
     
     def _extract_image_url(self, soup: BeautifulSoup) -> Optional[str]:
-        """Extract main image URL."""
-        img = soup.find('img')
-        if img and img.get('src'):
-            # Prefer larger images
-            src = img['src']
-            # Remove WordPress thumbnail size suffix
-            src = re.sub(r'-\d+x\d+(?=\.(jpg|jpeg|png|gif))', '', src)
-            return src
+        """
+        Extract real property photo URL.
+        Rejects logos, banners, and site branding.
+        Priority: gallery photos > content-area uploads > featured image.
+        """
+        property_images = []
+        
+        # 1. Look in photo gallery sections
+        gallery_imgs = soup.find_all('img', class_=re.compile(r'gallery|photo|thumbnail|property|m-blockThumbnails', re.I))
+        for img in gallery_imgs:
+            src = img.get('src', '') or img.get('data-src', '')
+            if src and 'wp-content/uploads' in src:
+                property_images.append(src)
+        
+        # 2. Look for images in uploads with property-like filenames
+        upload_imgs = soup.find_all('img', src=re.compile(r'wp-content/uploads'))
+        for img in upload_imgs:
+            src = img.get('src', '')
+            filename = src.split('/')[-1].lower()
+            # Reject logos, banners, headers
+            if any(x in filename for x in ['logo', 'banner', 'header', 'footer', 'icon', 'favicon']):
+                continue
+            property_images.append(src)
+        
+        # 3. Deduplicate
+        seen = set()
+        unique_images = []
+        for src in property_images:
+            if src not in seen:
+                seen.add(src)
+                unique_images.append(src)
+        
+        # 4. Prefer full-size images over thumbnails
+        for src in unique_images:
+            if not re.search(r'-\d+x\d+\.', src):
+                return src
+        
+        # 5. Fallback: first unique image
+        if unique_images:
+            return unique_images[0]
+        
         return None
     
     def normalize(self, raw_data: Dict[str, Any]) -> Property:
-        """
-        Normalize raw property data into a Property object.
-        
-        Args:
-            raw_data: Dictionary containing raw property data
-            
-        Returns:
-            Normalized Property object
-        """
+        """Normalize raw property data into a Property object."""
         try:
-            # Generate ID from title or URL
             title = raw_data.get('title', '')
             id_match = re.search(r'№?(\d+)', title)
             property_id = f"takeo-{id_match.group(1)}" if id_match else raw_data.get('id', str(hash(title)))
             
-            # Generate source URL if not provided
             source_url = raw_data.get('source_url')
             if not source_url and raw_data.get('id'):
                 source_url = f"{self.BASE_URL}/bank/{raw_data['id']}/"
             
-            # Extract area from title (山内町大字犬走 etc.)
             area = raw_data.get('area')
             if not area:
-                # Try to extract from title
                 area_match = re.search(r'(.+町.+)$', title)
                 if area_match:
                     area = area_match.group(1)
@@ -349,15 +318,7 @@ class SagaTakeoScraper(BaseScraper):
             raise ParseError(f"Failed to normalize property data: {e}")
     
     def scrape(self, url: str = None) -> List[Property]:
-        """
-        Scrape all listings from Takeo City vacant-house bank.
-        
-        Args:
-            url: Optional URL (ignored for API-based scraping)
-            
-        Returns:
-            List of normalized Property objects
-        """
+        """Scrape all listings from Takeo City vacant-house bank."""
         logger.info(f"[{self.get_source_name()}] Starting scrape")
         
         all_properties = []
@@ -365,13 +326,11 @@ class SagaTakeoScraper(BaseScraper):
         errors = 0
         
         try:
-            # Fetch first page
             first_page = self.fetch_listings(page=1, per_page=100)
             
-            # Fetch remaining pages if needed
             all_raw_listings = first_page
             page = 2
-            while len(first_page) == 100 and page <= 10:  # Limit to first 1000 listings
+            while len(first_page) == 100 and page <= 10:
                 try:
                     page_data = self.fetch_listings(page=page, per_page=100)
                     if not page_data:
@@ -383,22 +342,18 @@ class SagaTakeoScraper(BaseScraper):
             
             logger.info(f"[{self.get_source_name()}] Found {len(all_raw_listings)} raw listings")
             
-            # Process each listing
             for raw_listing in all_raw_listings:
                 try:
-                    # Extract data from WordPress API response
                     title = raw_listing.get('title', {}).get('rendered', '')
                     listing_id = raw_listing.get('id')
                     link = raw_listing.get('link', '')
                     
-                    # Get featured image
                     image_url = None
                     if '_embedded' in raw_listing and 'wp:featuredmedia' in raw_listing['_embedded']:
                         media = raw_listing['_embedded']['wp:featuredmedia']
                         if media and media[0].get('source_url'):
                             image_url = media[0]['source_url']
                     
-                    # Create raw data dict
                     raw_data = {
                         'id': str(listing_id),
                         'title': title,
@@ -420,13 +375,11 @@ class SagaTakeoScraper(BaseScraper):
                         'longitude': None,
                     }
                     
-                    # Fetch individual page for detailed info (rate limited)
                     if link:
                         try:
                             page_html = self.fetch(link)
                             page_soup = BeautifulSoup(page_html, 'html.parser')
                             
-                            # Extract details from page
                             page_text = page_soup.get_text('\n', strip=True)
                             page_lines = [l.strip() for l in page_text.split('\n') if l.strip()]
                             
@@ -441,27 +394,26 @@ class SagaTakeoScraper(BaseScraper):
                             raw_data['image_url'] = self._extract_image_url(page_soup) or image_url
                             
                         except FetchError as e:
-                            logger.warning(f"[{self.get_source_name()}] Failed to fetch detail page {link}: {e}")
+                            logger.warning(f"Failed to fetch detail page {link}: {e}")
                     
-                    # Normalize and add
                     try:
                         property_obj = self.normalize(raw_data)
                         all_properties.append(property_obj)
                     except Exception as e:
-                        logger.error(f"[{self.get_source_name()}] Failed to normalize listing {listing_id}: {e}")
+                        logger.error(f"Failed to normalize listing {listing_id}: {e}")
                         rejected += 1
                         
                 except Exception as e:
-                    logger.error(f"[{self.get_source_name()}] Error processing listing: {e}")
+                    logger.error(f"Error processing listing: {e}")
                     errors += 1
             
-            logger.info(f"[{self.get_source_name()}] Scrape complete: {len(all_properties)} parsed, {rejected} rejected, {errors} errors")
+            logger.info(f"Scrape complete: {len(all_properties)} parsed, {rejected} rejected, {errors} errors")
             
         except FetchError as e:
-            logger.error(f"[{self.get_source_name()}] Fetch error: {e}")
+            logger.error(f"Fetch error: {e}")
             raise
         except Exception as e:
-            logger.error(f"[{self.get_source_name()}] Unexpected error: {e}")
+            logger.error(f"Unexpected error: {e}")
             raise ScraperError(f"Unexpected error during scraping: {e}")
         
         return all_properties
