@@ -9,52 +9,73 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="container">
             <h1 class="logo"><a href="/" style="color: white; text-decoration: none;">AKIYA SCOUT</a></h1>
-            <p class="tagline">Find Japan's Hidden Cheap Houses</p>
+            <p class="tagline">Find affordable countryside properties in Japan.</p>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main">
         <div class="container">
             <nav class="breadcrumb">
                 <a href="/">Home</a> &gt; <span>Property Details</span>
             </nav>
             
-            <!-- Loading State -->
             <div id="loading-state" class="state-container">
                 <div class="spinner"></div>
-                <p>Loading property details...</p>
+                <p>Loading property...</p>
             </div>
             
-            <!-- Error State -->
             <div id="error-state" class="state-container hidden">
-                <div class="error-icon">⚠️</div>
                 <h3>Property Not Found</h3>
                 <p id="error-message">Unable to load property details.</p>
                 <a href="/" class="btn btn-primary">Back to Search</a>
             </div>
             
-            <!-- Property Detail Content -->
             <div id="property-detail" class="property-detail hidden">
-                <!-- Photos Section -->
-                <section class="detail-section photos-section">
-                    <div id="photo-gallery" class="photo-gallery">
+                <!-- Photo Section -->
+                <section class="detail-section photo-section">
+                    <div class="property-photo-container" id="property-photo-container">
                         <img id="main-photo" src="" alt="Property photo" class="main-photo">
+                        <div id="photo-placeholder" class="photo-placeholder hidden">
+                            No property image available
+                        </div>
                     </div>
+                    <div id="photo-gallery" class="photo-gallery hidden"></div>
                 </section>
                 
                 <!-- Title and Price -->
                 <section class="detail-section title-section">
-                    <div class="title-content">
-                        <span class="property-badge">Real Listing</span>
-                        <h2 id="property-title" class="detail-title"></h2>
-                        <div id="property-price" class="detail-price"></div>
-                        <div id="property-location" class="detail-location"></div>
+                    <div class="property-badge-row">
+                        <span class="property-badge badge-real">Real Listing</span>
+                        <span id="listing-type-badge" class="property-badge badge-sale">For Sale</span>
                     </div>
+                    <h2 id="property-title" class="detail-title"></h2>
+                    <div id="property-price" class="detail-price"></div>
+                    <div id="property-location" class="detail-location"></div>
+                </section>
+                
+                <!-- Property Information -->
+                <section class="detail-section">
+                    <h3 class="section-title">Property Information</h3>
+                    <div class="details-grid" id="property-details-grid"></div>
+                </section>
+                
+                <!-- Akiya Score -->
+                <section class="detail-section" id="score-section">
+                    <h3 class="section-title">Akiya Score</h3>
+                    <div class="total-score">
+                        <span id="total-score-value" class="total-score-value"></span>
+                        <span class="total-score-label">/ 100</span>
+                    </div>
+                    <div id="breakdown-list" class="breakdown-list"></div>
+                </section>
+                
+                <!-- Cost Estimates -->
+                <section class="detail-section" id="cost-section">
+                    <h3 class="section-title">Cost Estimates</h3>
+                    <div class="cost-estimates" id="cost-estimates"></div>
                 </section>
                 
                 <!-- GOOD / WATCH / UNKNOWN -->
@@ -75,61 +96,33 @@
                     </div>
                 </section>
                 
-                <!-- Property Details -->
-                <section class="detail-section">
-                    <h3 class="section-title">Property Details</h3>
-                    <div class="details-grid" id="property-details-grid"></div>
-                </section>
-                
-                <!-- Score Breakdown -->
-                <section class="detail-section">
-                    <h3 class="section-title">Akiya Score Breakdown</h3>
-                    <div id="score-breakdown" class="score-breakdown">
-                        <div class="total-score">
-                            <span id="total-score-value" class="total-score-value"></span>
-                            <span class="total-score-label">/ 100</span>
-                        </div>
-                        <div id="breakdown-list" class="breakdown-list"></div>
-                    </div>
-                </section>
-                
-                <!-- Cost Estimates -->
-                <section class="detail-section">
-                    <h3 class="section-title">Cost Estimates</h3>
-                    <div class="cost-estimates" id="cost-estimates"></div>
-                </section>
-                
-                <!-- Map Section -->
+                <!-- Map -->
                 <section class="detail-section">
                     <h3 class="section-title">Location Map</h3>
                     <div id="map-container" class="map-container">
                         <div id="map"></div>
                         <div id="map-unavailable" class="map-unavailable hidden">
-                            Location coordinates unavailable.
+                            No map location available.
                         </div>
                     </div>
                 </section>
                 
                 <!-- Source Information -->
-                <section class="detail-section">
-                    <h3 class="section-title">Source Information</h3>
+                <section class="detail-section source-section">
+                    <h3 class="section-title">Source</h3>
                     <div class="source-info" id="source-info"></div>
-                </section>
-                
-                <!-- Actions -->
-                <section class="detail-section actions-section">
-                    <a href="/" class="btn btn-secondary">Back to Search</a>
-                    <a id="original-listing" href="#" target="_blank" class="btn btn-primary">View Original Listing</a>
+                    <div class="source-actions">
+                        <a id="original-listing" href="#" target="_blank" rel="noopener" class="btn btn-primary">Open Original Listing</a>
+                    </div>
                 </section>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 Akiya Scout - Japan Cheap House Finder</p>
-            <p class="disclaimer">Property scores are not professional real-estate estimates.</p>
+            <p>Akiya Scout · Search publicly listed vacant and rural properties from local sources.</p>
+            <p class="disclaimer">Akiya Scout does not independently verify ownership, structural condition, legal status, or availability. Estimates are for research purposes only.</p>
         </div>
     </footer>
 
