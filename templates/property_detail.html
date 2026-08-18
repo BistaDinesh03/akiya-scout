@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/detail.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><a href="/" style="color: white; text-decoration: none;">AKIYA SCOUT</a></h1>
+            <p class="tagline">Find Japan's Hidden Cheap Houses</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="/">Home</a> &gt; <span>Property Details</span>
+            </nav>
+            
+            <!-- Loading State -->
+            <div id="loading-state" class="state-container">
+                <div class="spinner"></div>
+                <p>Loading property details...</p>
+            </div>
+            
+            <!-- Error State -->
+            <div id="error-state" class="state-container hidden">
+                <div class="error-icon">⚠️</div>
+                <h3>Property Not Found</h3>
+                <p id="error-message">Unable to load property details.</p>
+                <a href="/" class="btn btn-primary">Back to Search</a>
+            </div>
+            
+            <!-- Property Detail Content -->
+            <div id="property-detail" class="property-detail hidden">
+                <!-- Photos Section -->
+                <section class="detail-section photos-section">
+                    <div id="photo-gallery" class="photo-gallery">
+                        <img id="main-photo" src="" alt="Property photo" class="main-photo">
+                    </div>
+                </section>
+                
+                <!-- Title and Price -->
+                <section class="detail-section title-section">
+                    <div class="title-content">
+                        <span class="property-badge">Real Listing</span>
+                        <h2 id="property-title" class="detail-title"></h2>
+                        <div id="property-price" class="detail-price"></div>
+                        <div id="property-location" class="detail-location"></div>
+                    </div>
+                </section>
+                
+                <!-- GOOD / WATCH / UNKNOWN -->
+                <section class="detail-section classification-section">
+                    <div class="classification-grid">
+                        <div class="classification-card good" id="good-section">
+                            <h3>GOOD</h3>
+                            <ul id="good-points"></ul>
+                        </div>
+                        <div class="classification-card watch" id="watch-section">
+                            <h3>WATCH</h3>
+                            <ul id="watch-points"></ul>
+                        </div>
+                        <div class="classification-card unknown" id="unknown-section">
+                            <h3>UNKNOWN</h3>
+                            <ul id="unknown-points"></ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Property Details -->
+                <section class="detail-section">
+                    <h3 class="section-title">Property Details</h3>
+                    <div class="details-grid" id="property-details-grid"></div>
+                </section>
+                
+                <!-- Score Breakdown -->
+                <section class="detail-section">
+                    <h3 class="section-title">Akiya Score Breakdown</h3>
+                    <div id="score-breakdown" class="score-breakdown">
+                        <div class="total-score">
+                            <span id="total-score-value" class="total-score-value"></span>
+                            <span class="total-score-label">/ 100</span>
+                        </div>
+                        <div id="breakdown-list" class="breakdown-list"></div>
+                    </div>
+                </section>
+                
+                <!-- Cost Estimates -->
+                <section class="detail-section">
+                    <h3 class="section-title">Cost Estimates</h3>
+                    <div class="cost-estimates" id="cost-estimates"></div>
+                </section>
+                
+                <!-- Map Section -->
+                <section class="detail-section">
+                    <h3 class="section-title">Location Map</h3>
+                    <div id="map-container" class="map-container">
+                        <div id="map"></div>
+                        <div id="map-unavailable" class="map-unavailable hidden">
+                            Location coordinates unavailable.
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Source Information -->
+                <section class="detail-section">
+                    <h3 class="section-title">Source Information</h3>
+                    <div class="source-info" id="source-info"></div>
+                </section>
+                
+                <!-- Actions -->
+                <section class="detail-section actions-section">
+                    <a href="/" class="btn btn-secondary">Back to Search</a>
+                    <a id="original-listing" href="#" target="_blank" class="btn btn-primary">View Original Listing</a>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Akiya Scout - Japan Cheap House Finder</p>
+            <p class="disclaimer">Property scores are not professional real-estate estimates.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/detail.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+"""
+Akiya Scout application package
+"""

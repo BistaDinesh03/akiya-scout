@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKIYA SCOUT - Find Japan's Hidden Cheap Houses</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">AKIYA SCOUT</h1>
+            <p class="tagline">Find Japan's Hidden Cheap Houses</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Filters Section -->
+            <section class="filters-section">
+                <h2>Search Filters</h2>
+                <form id="search-form" class="filters-form">
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label for="max-price">Maximum Price (¥)</label>
+                            <input type="number" id="max-price" name="max_price" placeholder="e.g., 5000000" min="0" step="100000">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="max-total-cost">Maximum Total Cost (¥)</label>
+                            <input type="number" id="max-total-cost" name="max_total_cost" placeholder="e.g., 8000000" min="0" step="100000">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="prefecture">Prefecture</label>
+                            <select id="prefecture" name="prefecture">
+                                <option value="">All Prefectures</option>
+                                <option value="Saga">Saga</option>
+                                <option value="Fukuoka">Fukuoka</option>
+                                <option value="Oita">Oita</option>
+                                <option value="Nagasaki">Nagasaki</option>
+                                <option value="Kumamoto">Kumamoto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="municipality">Municipality</label>
+                            <input type="text" id="municipality" name="municipality" placeholder="e.g., Takeo">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="min-land">Minimum Land Size (m²)</label>
+                            <input type="number" id="min-land" name="min_land" placeholder="e.g., 100" min="0" step="10">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="min-building">Minimum Building Size (m²)</label>
+                            <input type="number" id="min-building" name="min_building" placeholder="e.g., 50" min="0" step="10">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="min-rooms">Minimum Rooms</label>
+                            <input type="number" id="min-rooms" name="min_rooms" placeholder="e.g., 2" min="0" step="1">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="parking">Parking</label>
+                            <select id="parking" name="parking">
+                                <option value="">Any</option>
+                                <option value="yes">Required</option>
+                                <option value="no">Not Required</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary" id="search-btn">Search Properties</button>
+                        <button type="button" class="btn btn-secondary" id="reset-btn">Reset Filters</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section">
+                <div class="results-header">
+                    <h2>Results</h2>
+                    <span id="results-count" class="results-count"></span>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loading-state" class="state-container hidden">
+                    <div class="spinner"></div>
+                    <p>Searching for properties...</p>
+                </div>
+                
+                <!-- Error State -->
+                <div id="error-state" class="state-container hidden">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Something went wrong</h3>
+                    <p id="error-message">Unable to fetch properties. Please try again.</p>
+                    <button class="btn btn-primary" onclick="searchProperties()">Retry</button>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="state-container hidden">
+                    <div class="empty-icon">🏠</div>
+                    <h3>No properties found</h3>
+                    <p>Try adjusting your filters to see more results.</p>
+                    <button class="btn btn-secondary" onclick="resetFilters()">Reset Filters</button>
+                </div>
+                
+                <!-- Results Grid -->
+                <div id="results-grid" class="results-grid"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Akiya Scout - Japan Cheap House Finder</p>
+            <p class="disclaimer">Property scores are not professional real-estate estimates.</p>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

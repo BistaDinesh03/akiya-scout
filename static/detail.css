@@ -1,0 +1,313 @@
+/* Property Detail Page Styles */
+
+.breadcrumb {
+    margin-bottom: 2rem;
+    color: var(--text-secondary);
+}
+
+.breadcrumb a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.property-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.detail-section {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.section-title {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+/* Photos */
+.photo-gallery {
+    width: 100%;
+}
+
+.main-photo {
+    width: 100%;
+    max-height: 500px;
+    object-fit: cover;
+    border-radius: var(--radius);
+}
+
+/* Title Section */
+.title-content {
+    text-align: center;
+}
+
+.detail-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 1rem 0;
+    color: var(--text-primary);
+}
+
+.detail-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
+}
+
+.detail-location {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+}
+
+/* Classification */
+.classification-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.classification-card {
+    padding: 1.5rem;
+    border-radius: var(--radius);
+}
+
+.classification-card h3 {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.classification-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.classification-card li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.classification-card li:last-child {
+    border-bottom: none;
+}
+
+.classification-card.good {
+    background: #f0fff4;
+}
+
+.classification-card.good h3 {
+    color: var(--success-color);
+}
+
+.classification-card.watch {
+    background: #fffaf0;
+}
+
+.classification-card.watch h3 {
+    color: var(--warning-color);
+}
+
+.classification-card.unknown {
+    background: #f7fafc;
+}
+
+.classification-card.unknown h3 {
+    color: var(--text-secondary);
+}
+
+/* Details Grid */
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: var(--radius);
+}
+
+.detail-item-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.detail-item-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Score Breakdown */
+.score-breakdown {
+    text-align: center;
+}
+
+.total-score {
+    margin-bottom: 2rem;
+}
+
+.total-score-value {
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--accent-color);
+}
+
+.total-score-label {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.breakdown-list {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+}
+
+.breakdown-category {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.breakdown-score {
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.breakdown-explanation {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Cost Estimates */
+.cost-estimates {
+    display: grid;
+    gap: 1rem;
+}
+
+.cost-estimate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: var(--radius);
+}
+
+.cost-estimate-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cost-estimate-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+/* Map */
+.map-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.map-unavailable {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+}
+
+/* Source Info */
+.source-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.source-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.source-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 120px;
+}
+
+.source-value {
+    color: var(--text-secondary);
+}
+
+/* Actions */
+.actions-section {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .classification-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .detail-title {
+        font-size: 1.5rem;
+    }
+    
+    .detail-price {
+        font-size: 2rem;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-section {
+        flex-direction: column;
+    }
+    
+    .actions-section .btn {
+        width: 100%;
+    }
+    
+    .map-container {
+        height: 300px;
+    }
+}
