@@ -69,6 +69,7 @@ class SearchService:
         if not force_refresh:
             cached = self.cache.get(self.CACHE_KEY)
             if cached is not None:
+                logger.info(f"Returning {len(cached)} properties from cache")
                 return cached
         
         all_properties = []
@@ -90,24 +91,38 @@ class SearchService:
                     logger.error(f"Source {source_name} failed: {e}")
                     failed_sources.append(source_name)
         
+        if failed_sources:
+            logger.warning(f"Failed sources: {failed_sources}")
+        else:
+            logger.info("All sources succeeded")
+        
         unique_properties = self.deduplicate(all_properties)
+        logger.info(f"Total unique properties: {len(unique_properties)}")
         self.cache.set(self.CACHE_KEY, unique_properties)
         
         return unique_properties
     
     def _scrape_source(self, scraper_class) -> List[Property]:
-        """Scrape a single source with error handling."""
+        """Scrape a single source with error handling and detailed logging."""
         scraper = None
+        source_name = scraper_class.__name__
+        logger.info(f"[SOURCE: {source_name}] Request started")
+        
         try:
             scraper = scraper_class()
+            logger.info(f"[SOURCE: {source_name}] Scraper created")
+            
             properties = scraper.scrape()
+            logger.info(f"[SOURCE: {source_name}] Found {len(properties)} listings")
             return properties
+            
         except Exception as e:
-            logger.error(f"Failed to scrape {scraper_class.__name__}: {e}")
+            logger.error(f"[SOURCE: {source_name}] FAILED: {type(e).__name__}: {e}")
             return []
         finally:
             if scraper:
                 scraper.close()
+                logger.info(f"[SOURCE: {source_name}] Scraper closed")
     
     def deduplicate(self, properties: List[Property]) -> List[Property]:
         """Deduplicate properties by ID."""
@@ -193,22 +208,11 @@ class SearchService:
     ) -> List[Property]:
         """
         Rank properties by various criteria.
-        
-        Sort options:
-        - price_asc: Cheapest purchase (SALE only)
-        - price_desc: Most expensive (SALE only)
-        - total_cost_asc: Cheapest total project (SALE only)
-        - value_score: Best value (SALE only)
-        - land_asc: Smallest land
-        - land_desc: Largest land
-        - renovation_asc: Lowest renovation (SALE only)
-        - newest: Most recent
         """
         if sort is None or sort == 'newest':
             return sorted(properties, key=lambda p: p.collected_at, reverse=True)
         
         elif sort == 'price_asc':
-            # Only compare SALE listings for purchase price
             sale_props = [p for p in properties if p.listing_type == 'SALE']
             rental_props = [p for p in properties if p.listing_type == 'RENTAL']
             sorted_sale = sorted(sale_props, key=lambda p: p.price if p.price is not None else float('inf'))
@@ -223,12 +227,10 @@ class SearchService:
             return sorted_sale + sorted_rental
         
         elif sort == 'total_cost_asc':
-            # Only SALE listings have meaningful total cost
             sale_props = [p for p in properties if p.listing_type == 'SALE']
             return sorted(sale_props, key=lambda p: self._get_total_cost(p))
         
         elif sort == 'value_score':
-            # Only SALE listings have meaningful Akiya Score
             sale_props = [p for p in properties if p.listing_type == 'SALE']
             return sorted(sale_props, key=lambda p: self._get_akiya_score(p), reverse=True)
         
@@ -239,14 +241,12 @@ class SearchService:
             return sorted(properties, key=lambda p: p.land_size_m2 if p.land_size_m2 is not None else float('-inf'), reverse=True)
         
         elif sort == 'renovation_asc':
-            # Only SALE listings have meaningful renovation cost
             sale_props = [p for p in properties if p.listing_type == 'SALE']
             return sorted(sale_props, key=lambda p: self._get_renovation_cost(p))
         
         return properties
     
     def _get_total_cost(self, prop: Property) -> float:
-        """Get total cost for ranking (SALE only)."""
         if prop.listing_type == 'RENTAL':
             return float('inf')
         valuation = valuation_engine.valuate(prop)
@@ -255,14 +255,12 @@ class SearchService:
         return float('inf')
     
     def _get_akiya_score(self, prop: Property) -> float:
-        """Get Akiya score for ranking (SALE only)."""
         if prop.listing_type == 'RENTAL':
             return 0.0
         valuation = valuation_engine.valuate(prop)
         return valuation.akiya_score
     
     def _get_renovation_cost(self, prop: Property) -> float:
-        """Get renovation cost for ranking (SALE only)."""
         if prop.listing_type == 'RENTAL':
             return float('inf')
         valuation = valuation_engine.valuate(prop)

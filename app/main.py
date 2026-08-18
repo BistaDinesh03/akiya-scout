@@ -91,6 +91,48 @@ async def health_check():
     }
 
 
+@app.get("/api/diagnose")
+async def diagnose_sources():
+    """
+    Diagnostic endpoint to test source access from the deployment environment.
+    """
+    import requests as req
+    
+    results = {}
+    
+    # Test Takeo
+    try:
+        r = req.get("https://takeo-ijyu.jp/wp-json/wp/v2/bank?per_page=1", timeout=20)
+        results["saga_takeo"] = {
+            "status": r.status_code,
+            "reachable": r.status_code == 200,
+            "content_length": len(r.text),
+        }
+    except Exception as e:
+        results["saga_takeo"] = {
+            "status": None,
+            "reachable": False,
+            "error": f"{type(e).__name__}: {str(e)[:200]}",
+        }
+    
+    # Test Aso
+    try:
+        r = req.get("https://www.city.aso.kumamoto.jp/akiya/", timeout=20, verify=False)
+        results["aso_kumamoto"] = {
+            "status": r.status_code,
+            "reachable": r.status_code == 200,
+            "content_length": len(r.text),
+        }
+    except Exception as e:
+        results["aso_kumamoto"] = {
+            "status": None,
+            "reachable": False,
+            "error": f"{type(e).__name__}: {str(e)[:200]}",
+        }
+    
+    return results
+
+
 @app.get("/api/properties")
 async def get_properties(
     max_price: Optional[int] = Query(None, ge=0, description="Maximum price in yen"),
