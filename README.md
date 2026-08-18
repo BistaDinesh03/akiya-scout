@@ -2,11 +2,11 @@
 
 
 
-\*\*Find Japan's Hidden Cheap Houses\*\*
+An open-source tool for discovering and analyzing publicly listed vacant and affordable houses in rural Japan.
 
 
 
-Akiya Scout is a real-time search engine for Japanese akiya (abandoned/unoccupied houses) listings. It scrapes publicly accessible municipal Akiya bank websites, normalizes the data, and provides search, filtering, ranking, and comparison tools.
+Akiya Scout fetches property listings from public municipal Akiya bank websites, normalizes the data, and provides search, filtering, ranking, and comparison tools. The application runs without a permanent database; all property data is fetched from sources and cached temporarily in memory.
 
 
 
@@ -14,97 +14,67 @@ Akiya Scout is a real-time search engine for Japanese akiya (abandoned/unoccupie
 
 
 
-\- \*\*Real-time scraping\*\* from municipal Akiya banks
+\- Real public-source property collection
 
-\- \*\*Search \& filter\*\*: price, land size, building size, rooms, parking, prefecture
+\- Search and filtering by price, land size, building size, rooms, and parking
 
-\- \*\*Ranking\*\*: cheapest, best value, largest land, lowest renovation
+\- Sale and rental listing separation
 
-\- \*\*Property comparison\*\*: compare 2-3 properties side by side
+\- Property scoring (Akiya Score, 0-100)
 
-\- \*\*Akiya Score (0-100)\*\*: transparent valuation breakdown
+\- Renovation cost estimates
 
-\- \*\*Estimated renovation \& total cost\*\*
+\- Total-cost estimates
 
-\- \*\*Source transparency\*\*: original URL, collected time, refresh status
+\- Property comparison (2-3 properties)
 
-\- \*\*10-minute cache\*\*: avoids scraping on every request
+\- Original source links and collection timestamps
 
-\- \*\*No database\*\*: all data is transient, refreshed from sources
+\- Map support when coordinates exist
 
-
-
-\## Supported Sources
+\- In-memory caching (default: 10 minutes)
 
 
 
-| Source | Municipality | Status | Listings |
+\## How It Works
 
-|--------|-------------|--------|----------|
+User
 
-| Takeo City Akiya Bank | Takeo, Saga | ✅ Active | 22+ |
+|
 
-| Aso City Akiya Bank | Aso, Kumamoto | ✅ Active | 3+ |
+v
 
-| Imari City | Imari, Saga | ⚠️ Access Restricted | - |
+FastAPI
 
-| Ureshino City | Ureshino, Saga | ⚠️ Access Restricted | - |
+|
 
-| Fukuoka Pref. | Fukuoka | ⚠️ Under Review | - |
+v
 
-| Kumamoto Pref. | Kumamoto | ⚠️ Under Review | - |
+Public property sources (municipal Akiya banks)
 
-| Oita City | Oita | ⚠️ Under Review | - |
+|
 
+v
 
+Normalize
 
-\## Architecture
+|
 
-akiya-scout/
+v
 
-├── app/
+Deduplicate
 
-│ ├── main.py # FastAPI application
+|
 
-│ ├── models.py # Pydantic models
+v
 
-│ ├── config.py # Configuration
+Analyze (score, renovation estimate, total cost)
 
-│ ├── services/
+|
 
-│ │ ├── search.py # Search, filter, rank, cache
+v
 
-│ │ ├── valuation.py # Akiya Score engine
-
-│ │ └── image\_validation.py # Image URL validation
-
-│ └── scrapers/
-
-│ ├── base.py # Base scraper interface
-
-│ ├── registry.py # Scraper registry
-
-│ └── sources/ # Source adapters
-
-│ ├── saga\_takeo.py
-
-│ ├── aso\_kumamoto.py
-
-│ └── ...
-
-├── templates/ # HTML templates
-
-├── static/ # CSS, JS
-
-├── tests/ # Test suite
-
-├── requirements.txt
-
-├── render.yaml # Deployment config
-
-├── .github/workflows/ # CI
-
-└── README.md
+Search results
 
 
 
@@ -112,219 +82,261 @@ text
 
 
 
-\## Installation (Windows PowerShell)
+The current version does not use a permanent database. All data is transient and refreshed from sources when the cache expires.
 
 
 
-\### Prerequisites
+\## Current Sources
 
 
 
-\- Python 3.12+
+| Source | Area | Type | Status |
+
+| --- | --- | --- | --- |
+
+| Takeo City | Saga | Sale | Active |
+
+| Aso City | Kumamoto | Rental | Active |
 
 
 
-\### Setup
+Additional sources may be unavailable because of access restrictions (403 responses, SSL issues, or anti-bot systems). Sources that cannot be accessed are not enabled.
+
+
+
+\## Quick Start
+
+
+
+Requirements: Python 3.12 or later, Windows PowerShell.
 
 
 
 ```powershell
 
-\# Clone the repository
-
-git clone <your-repo-url>
+git clone https://github.com/BistaDinesh03/akiya-scout.git
 
 cd akiya-scout
 
-
-
-\# Create virtual environment
-
 python -m venv venv
 
-
-
-\# Activate
-
 .\\venv\\Scripts\\Activate.ps1
-
-
-
-\# Install dependencies
 
 pip install -r requirements.txt
 
-
-
-\# Copy environment variables
-
-copy .env.example .env
-
-
-
-\# Run tests
-
-python -m pytest
-
-Running Locally
-
-powershell
-
-\# Activate virtual environment
-
-.\\venv\\Scripts\\Activate.ps1
-
-
-
-\# Start server
-
 uvicorn app.main:app --reload
 
-
-
-\# Or use PowerShell script
-
-.\\run.ps1
-
-Open: http://localhost:8000
+Open: http://127.0.0.1:8000
 
 
 
-API Endpoints
+API
 
 Endpoint	Description
 
-GET /	Homepage
+/api/properties	Search and filter properties
 
-GET /health	Health check
+/api/sources	List all sources and their status
 
-GET /api/properties	Search properties
+/api/compare	Compare 2-3 properties
 
-GET /api/properties/{id}	Property detail
+/health	Health check
 
-GET /api/compare?ids=id1,id2	Compare properties
+/api/docs	Interactive API documentation
 
-GET /api/sources	Source status
+Configuration
 
-GET /api/scrape/saga-takeo	Manual scrape
+Variable	Default	Description
 
-GET /api/scrape/aso-kumamoto	Manual scrape
+PYTHON\_VERSION	3.12	Python runtime version
 
-Deploying to Render
+CACHE\_TTL\_SECONDS	600	Cache time-to-live in seconds
 
-Push this repository to GitHub
+AKIYA\_ALLOW\_INSECURE\_SSL	false	Allow SSL verification bypass
 
+Insecure SSL should remain disabled in production. Setting AKIYA\_ALLOW\_INSECURE\_SSL=true is for development only when a source has a self-signed certificate.
 
 
-Go to render.com
 
+Testing
 
+Run the test suite:
 
-Click "New +" → "Web Service"
 
 
+powershell
 
-Connect your GitHub repository
+python -m pytest
 
+At the time of this README update, the test suite contains 163+ passing tests. The exact count may change as tests are added or updated.
 
 
-Render will auto-detect render.yaml
 
+Adding a Source
 
+Source adapters live in app/scrapers/sources/. Each adapter extends BaseScraper or HTMLScraper and implements:
 
-Or manually configure:
 
 
+get\_source\_name()
 
-Build Command: pip install -r requirements.txt
 
 
+fetch()
 
-Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 
+parse()
 
-Environment Variables:
 
 
+normalize()
 
-PYTHON\_VERSION=3.12
 
 
+After creating an adapter, register it in app/scrapers/registry.py and add fixture tests in tests/fixtures/.
 
-AKIYA\_ALLOW\_INSECURE\_SSL=false
 
 
+Data and Source Policy
 
-CACHE\_TTL\_SECONDS=600
+Only use publicly accessible sources.
 
 
 
-Data Source Rules
+Respect robots.txt and site terms.
 
-Only scrape publicly accessible data
 
 
+Do not bypass CAPTCHA, login, anti-bot systems, or access restrictions.
 
-Respect robots.txt and site terms
 
 
+Preserve original source links.
 
-Do not bypass CAPTCHA, login, or anti-bot systems
 
 
+Akiya Scout does not verify property ownership, condition, legality, or availability.
 
-Do not invent or fake listings
 
 
-
-Preserve original source URLs
-
-
-
-Rate limit all requests (1 second between requests)
-
-
-
-Never use insecure SSL in production
+Property and renovation values are estimates for research purposes.
 
 
 
 Limitations
 
-Property scores are for research purposes only; not professional real-estate estimates
+Limited number of active sources (currently 2).
 
 
 
-Sources may change their HTML structure; scrapers need updates
+Some sources may block automated access from certain IP ranges.
 
 
 
-Some sources are behind access restrictions
+Some properties lack coordinates.
 
 
 
-No database: all data is transient and refreshed on cache expiry
+Renovation estimates are approximate.
 
 
 
-Disclaimer
+Data can change at the source without notice.
 
-Akiya Scout is a research tool. Listing data comes from public municipal sources. Scores and cost estimates are calculated using simple configurable rules and are not professional real-estate or renovation quotes.
+
+
+No permanent database in the current version.
+
+
+
+Rental and sale properties are handled separately and are not compared directly.
+
+
+
+Project Structure
+
+text
+
+akiya-scout/
+
+|-- app/
+
+|   |-- main.py
+
+|   |-- models.py
+
+|   |-- config.py
+
+|   |-- scrapers/
+
+|   |   |-- base.py
+
+|   |   |-- registry.py
+
+|   |   `-- sources/
+
+|   `-- services/
+
+|       |-- search.py
+
+|       |-- valuation.py
+
+|       `-- image\_validation.py
+
+|-- templates/
+
+|-- static/
+
+|-- tests/
+
+|-- requirements.txt
+
+|-- render.yaml
+
+`-- README.md
+
+Contributing
+
+See CONTRIBUTING.md.
 
 
 
 License
 
-MIT License - see LICENSE.txt
+MIT License. See LICENSE.txt.
 
 
 
-Contributing
+Disclaimer
 
-See CONTRIBUTING.md
+Akiya Scout is a research tool. It is not professional real-estate, legal, financial, construction, or valuation advice. Listing data comes from public municipal sources. Scores and cost estimates are calculated using simple configurable rules and are not professional quotes.
 
 
 
-Topics
+text
+
+
+
+Save and close Notepad.
+
+
+
+\## Step 2: Commit and push
+
+
+
+```powershell
+
+git add README.md
+
+git commit -m "Rewrite README with professional style"
+
+git push origin main
+
+Let me know the output!
+
+
+
+
 
