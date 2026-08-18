@@ -74,12 +74,20 @@ async function searchProperties() {
         }
         
         const data = await response.json();
-        currentResults = data.properties;
         
         document.getElementById('results-count').textContent = `${data.total} properties found`;
         
         if (data.properties.length === 0) {
             showState('empty');
+            // Update empty message based on listing type
+            const emptyMsg = document.querySelector('#empty-state p');
+            if (currentListingType === 'SALE') {
+                emptyMsg.textContent = 'No sale properties found. Try For Rent or All.';
+            } else if (currentListingType === 'RENTAL') {
+                emptyMsg.textContent = 'No rental properties found. Try For Sale or All.';
+            } else {
+                emptyMsg.textContent = 'No properties found. Try adjusting your filters.';
+            }
         } else {
             displayProperties(data.properties);
         }
@@ -159,10 +167,6 @@ function createPropertyCard(prop) {
     `;
     
     return card;
-}
-
-function viewProperty(url) {
-    if (url) window.open(url, '_blank');
 }
 
 function showState(state) {
