@@ -29,6 +29,14 @@ LOGO_PATTERNS = [
     r'facebook',
     r'instagram',
     r'youtube',
+    r'placeholder',
+    r'default',
+    r'no-image',
+    r'noimage',
+    r'blank',
+    r'spacer',
+    r'pixel',
+    r'transparent',
 ]
 
 # Allowed image extensions
@@ -40,6 +48,8 @@ _rejected_url_cache: Set[str] = set()
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 IMAGE_TIMEOUT = 5  # seconds
+MIN_IMAGE_WIDTH = 200  # Minimum reasonable property image width
+MIN_IMAGE_HEIGHT = 150  # Minimum reasonable property image height
 
 
 def is_logo_or_branding(image_url: str) -> bool:
@@ -89,10 +99,10 @@ def validate_image_url(image_url: str) -> bool:
     
     # Validate HTTP response
     try:
-        response = requests.head(image_url, timeout=IMAGE_TIMEOUT, allow_redirects=True, verify=False)
+        response = requests.head(image_url, timeout=IMAGE_TIMEOUT, allow_redirects=True)
         
         if response.status_code == 405:  # HEAD not allowed, try GET
-            response = requests.get(image_url, timeout=IMAGE_TIMEOUT, stream=True, verify=False)
+            response = requests.get(image_url, timeout=IMAGE_TIMEOUT, stream=True)
         
         if response.status_code != 200:
             _rejected_url_cache.add(image_url)
@@ -121,9 +131,7 @@ def extract_best_image(images: list) -> Optional[str]:
     """
     Extract the best property image from a list of image URLs.
     Rejects logos and branding.
-    
-    Returns:
-        Best image URL or None
+    Returns None if no trustworthy image found.
     """
     for image_url in images:
         if image_url and validate_image_url(image_url):

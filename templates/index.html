@@ -7,67 +7,58 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="container">
             <h1 class="logo">AKIYA SCOUT</h1>
-            <p class="tagline">Find Japan's Hidden Cheap Houses</p>
+            <p class="tagline">Find affordable countryside properties in Japan.</p>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main">
         <div class="container">
-            <!-- Filters Section -->
-            <section class="filters-section">
-                <h2>Search Filters</h2>
-                <form id="search-form" class="filters-form">
+            <!-- Search Panel -->
+            <section class="search-panel">
+                <div class="listing-type-toggle">
+                    <button type="button" class="toggle-btn active" data-type="SALE">For Sale</button>
+                    <button type="button" class="toggle-btn" data-type="RENTAL">For Rent</button>
+                    <button type="button" class="toggle-btn" data-type="ALL">All</button>
+                </div>
+                
+                <form id="search-form">
                     <div class="filter-grid">
                         <div class="filter-group">
-                            <label for="max-price">Maximum Price (¥)</label>
-                            <input type="number" id="max-price" name="max_price" placeholder="e.g., 5000000" min="0" step="100000">
+                            <label for="max-price">Max Price (¥)</label>
+                            <input type="number" id="max-price" placeholder="e.g., 5000000" min="0">
                         </div>
-                        
-                        <div class="filter-group">
-                            <label for="max-total-cost">Maximum Total Cost (¥)</label>
-                            <input type="number" id="max-total-cost" name="max_total_cost" placeholder="e.g., 8000000" min="0" step="100000">
-                        </div>
-                        
                         <div class="filter-group">
                             <label for="prefecture">Prefecture</label>
-                            <select id="prefecture" name="prefecture">
-                                <option value="">All Prefectures</option>
+                            <select id="prefecture">
+                                <option value="">All</option>
                                 <option value="Saga">Saga</option>
+                                <option value="Kumamoto">Kumamoto</option>
                                 <option value="Fukuoka">Fukuoka</option>
                                 <option value="Oita">Oita</option>
-                                <option value="Nagasaki">Nagasaki</option>
-                                <option value="Kumamoto">Kumamoto</option>
                             </select>
                         </div>
-                        
                         <div class="filter-group">
                             <label for="municipality">Municipality</label>
-                            <input type="text" id="municipality" name="municipality" placeholder="e.g., Takeo">
+                            <input type="text" id="municipality" placeholder="e.g., Takeo">
                         </div>
-                        
                         <div class="filter-group">
-                            <label for="min-land">Minimum Land Size (m²)</label>
-                            <input type="number" id="min-land" name="min_land" placeholder="e.g., 100" min="0" step="10">
+                            <label for="min-land">Min Land (m²)</label>
+                            <input type="number" id="min-land" placeholder="e.g., 100" min="0">
                         </div>
-                        
                         <div class="filter-group">
-                            <label for="min-building">Minimum Building Size (m²)</label>
-                            <input type="number" id="min-building" name="min_building" placeholder="e.g., 50" min="0" step="10">
+                            <label for="min-building">Min Building (m²)</label>
+                            <input type="number" id="min-building" placeholder="e.g., 50" min="0">
                         </div>
-                        
                         <div class="filter-group">
-                            <label for="min-rooms">Minimum Rooms</label>
-                            <input type="number" id="min-rooms" name="min_rooms" placeholder="e.g., 2" min="0" step="1">
+                            <label for="min-rooms">Min Rooms</label>
+                            <input type="number" id="min-rooms" placeholder="e.g., 2" min="0">
                         </div>
-                        
                         <div class="filter-group">
                             <label for="parking">Parking</label>
-                            <select id="parking" name="parking">
+                            <select id="parking">
                                 <option value="">Any</option>
                                 <option value="yes">Required</option>
                                 <option value="no">Not Required</option>
@@ -75,53 +66,56 @@
                         </div>
                     </div>
                     
+                    <div class="sort-row">
+                        <label for="sort">Sort:</label>
+                        <select id="sort">
+                            <option value="value_score">Best Value</option>
+                            <option value="price_asc">Cheapest</option>
+                            <option value="total_cost_asc">Lowest Total Cost</option>
+                            <option value="land_desc">Largest Land</option>
+                            <option value="newest">Newest</option>
+                        </select>
+                    </div>
+                    
                     <div class="filter-actions">
-                        <button type="submit" class="btn btn-primary" id="search-btn">Search Properties</button>
-                        <button type="button" class="btn btn-secondary" id="reset-btn">Reset Filters</button>
+                        <button type="submit" class="btn btn-primary">Search</button>
+                        <button type="button" class="btn btn-outline" id="reset-btn">Reset</button>
                     </div>
                 </form>
             </section>
 
-            <!-- Results Section -->
+            <!-- Results -->
             <section class="results-section">
                 <div class="results-header">
-                    <h2>Results</h2>
+                    <h2>Properties</h2>
                     <span id="results-count" class="results-count"></span>
                 </div>
                 
-                <!-- Loading State -->
                 <div id="loading-state" class="state-container hidden">
                     <div class="spinner"></div>
-                    <p>Searching for properties...</p>
+                    <p>Searching...</p>
                 </div>
                 
-                <!-- Error State -->
                 <div id="error-state" class="state-container hidden">
-                    <div class="error-icon">⚠️</div>
-                    <h3>Something went wrong</h3>
-                    <p id="error-message">Unable to fetch properties. Please try again.</p>
+                    <h3>Error</h3>
+                    <p id="error-message">Unable to load properties.</p>
                     <button class="btn btn-primary" onclick="searchProperties()">Retry</button>
                 </div>
                 
-                <!-- Empty State -->
                 <div id="empty-state" class="state-container hidden">
-                    <div class="empty-icon">🏠</div>
                     <h3>No properties found</h3>
-                    <p>Try adjusting your filters to see more results.</p>
-                    <button class="btn btn-secondary" onclick="resetFilters()">Reset Filters</button>
+                    <p>Try adjusting your filters.</p>
                 </div>
                 
-                <!-- Results Grid -->
                 <div id="results-grid" class="results-grid"></div>
             </section>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 Akiya Scout - Japan Cheap House Finder</p>
-            <p class="disclaimer">Property scores are not professional real-estate estimates.</p>
+            <p>Akiya Scout · Search publicly listed vacant and rural properties from local sources.</p>
+            <p class="disclaimer">Akiya Scout does not independently verify ownership, structural condition, legal status, or availability. Estimates are for research purposes only.</p>
         </div>
     </footer>
 

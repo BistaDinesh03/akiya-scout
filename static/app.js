@@ -1,76 +1,83 @@
 // Akiya Scout - Frontend Application
-// Handles property search, filtering, and display
+let currentListingType = 'SALE';
+let currentResults = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Akiya Scout application initialized');
-    
-    // Set up event listeners
-    document.getElementById('search-form').addEventListener('submit', handleSearch);
-    document.getElementById('reset-btn').addEventListener('click', resetFilters);
-    
-    // Load initial properties
+    setupEventListeners();
     searchProperties();
 });
 
-// Global state
-let currentResults = [];
-
-// Handle search form submission
-async function handleSearch(event) {
-    event.preventDefault();
-    await searchProperties();
+function setupEventListeners() {
+    document.getElementById('search-form').addEventListener('submit', handleSearch);
+    document.getElementById('reset-btn').addEventListener('click', resetFilters);
+    
+    // Listing type toggle
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentListingType = btn.dataset.type;
+            searchProperties();
+        });
+    });
 }
 
-// Reset all filters
-function resetFilters() {
-    document.getElementById('search-form').reset();
+function handleSearch(event) {
+    event.preventDefault();
     searchProperties();
 }
 
-// Fetch and display properties
+function resetFilters() {
+    document.getElementById('search-form').reset();
+    currentListingType = 'SALE';
+    document.querySelectorAll('.toggle-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.dataset.type === 'SALE') b.classList.add('active');
+    });
+    searchProperties();
+}
+
 async function searchProperties() {
-    // Show loading state
     showState('loading');
     
     try {
-        // Build query parameters
         const params = new URLSearchParams();
         
         const maxPrice = document.getElementById('max-price').value;
-        const maxTotalCost = document.getElementById('max-total-cost').value;
         const prefecture = document.getElementById('prefecture').value;
         const municipality = document.getElementById('municipality').value;
         const minLand = document.getElementById('min-land').value;
         const minBuilding = document.getElementById('min-building').value;
         const minRooms = document.getElementById('min-rooms').value;
         const parking = document.getElementById('parking').value;
+        const sort = document.getElementById('sort').value;
         
         if (maxPrice) params.append('max_price', maxPrice);
-        if (maxTotalCost) params.append('max_total_cost', maxTotalCost);
         if (prefecture) params.append('prefecture', prefecture);
         if (municipality) params.append('municipality', municipality);
         if (minLand) params.append('min_land', minLand);
         if (minBuilding) params.append('min_building', minBuilding);
         if (minRooms) params.append('min_rooms', minRooms);
         if (parking) params.append('parking', parking);
+        if (sort) params.append('sort', sort);
         
-        // Add sort parameter
-        params.append('sort', 'price_asc');
+        if (currentListingType !== 'ALL') {
+            params.append('listing_type', currentListingType);
+        }
         
-        // Fetch properties
+        params.append('real_listings_only', 'true');
+        
         const response = await fetch(`/api/properties?${params.toString()}`);
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);
         }
         
         const data = await response.json();
         currentResults = data.properties;
         
-        // Update results count
         document.getElementById('results-count').textContent = `${data.total} properties found`;
         
-        // Display results
         if (data.properties.length === 0) {
             showState('empty');
         } else {
@@ -78,107 +85,75 @@ async function searchProperties() {
         }
         
     } catch (error) {
-        console.error('Error fetching properties:', error);
+        console.error('Error:', error);
         document.getElementById('error-message').textContent = error.message;
         showState('error');
     }
 }
 
-// Display properties in results grid
 function displayProperties(properties) {
-    const resultsGrid = document.getElementById('results-grid');
-    resultsGrid.innerHTML = '';
+    const grid = document.getElementById('results-grid');
+    grid.innerHTML = '';
     
-    properties.forEach(property => {
-        const card = createPropertyCard(property);
-        resultsGrid.appendChild(card);
+    properties.forEach(prop => {
+        grid.appendChild(createPropertyCard(prop));
     });
     
     showState('results');
 }
 
-// Create property card element
-function createPropertyCard(property) {
+function createPropertyCard(prop) {
     const card = document.createElement('div');
     card.className = 'property-card';
     
-    // Calculate score percentage for progress bar
-    const scorePercent = property.akiya_score || 0;
+    const listingType = prop.listing_type === 'RENTAL' ? 'For Rent' : 'For Sale';
+    const priceDisplay = prop.listing_type === 'RENTAL' 
+        ? `¥${formatNumber(prop.price)}/month`
+        : `¥${formatNumber(prop.price)}`;
     
-    // Format price
-    const price = property.price ? `¥${formatPrice(property.price)}` : 'Price not available';
-    const totalCost = property.estimated_total_cost ? `¥${formatPrice(property.estimated_total_cost)}` : 'N/A';
-    const renovationCost = property.estimated_renovation_cost ? `¥${formatPrice(property.estimated_renovation_cost)}` : 'N/A';
+    const imageHtml = prop.image_url
+        ? `<img src="${prop.image_url}" alt="${prop.title}" class="property-image" onerror="this.parentElement.innerHTML='<div class=\\'property-image-placeholder\\'>No property image available</div>'">`
+        : `<div class="property-image-placeholder">No property image available</div>`;
     
     card.innerHTML = `
-        ${property.image_url ? `
-        <img src="${property.image_url}" alt="${property.title}" class="property-image" onerror="this.style.display='none'">
-        ` : ''}
-        
-        <div class="property-card-content">
-            <span class="property-badge">Real Listing</span>
+        <div class="property-image-container">${imageHtml}</div>
+        <div class="property-card-body">
+            <div class="property-badge-row">
+                <span class="property-badge badge-real">Real Listing</span>
+                <span class="property-badge ${prop.listing_type === 'RENTAL' ? 'badge-rental' : 'badge-sale'}">${listingType}</span>
+            </div>
+            <h3 class="property-title" title="${prop.title}">${prop.title || 'Untitled'}</h3>
+            <div class="property-price">${priceDisplay}</div>
+            <div class="property-location">${prop.prefecture || ''} · ${prop.municipality || ''}</div>
             
-            <h3 class="property-title">${property.title || 'Untitled Property'}</h3>
-            
-            <div class="property-price">${price}</div>
-            
-            <div class="property-location">
-                ${property.prefecture || 'Unknown'} / ${property.municipality || 'Unknown'}
+            <div class="property-specs">
+                ${prop.land_size_m2 ? `<div class="spec-item"><strong>Land</strong> ${formatNumber(prop.land_size_m2)} m²</div>` : ''}
+                ${prop.building_size_m2 ? `<div class="spec-item"><strong>Building</strong> ${formatNumber(prop.building_size_m2)} m²</div>` : ''}
+                ${prop.build_year ? `<div class="spec-item"><strong>Built</strong> ${prop.build_year}</div>` : ''}
+                ${prop.rooms ? `<div class="spec-item"><strong>Rooms</strong> ${prop.rooms}</div>` : ''}
             </div>
             
-            <div class="property-details">
-                ${property.land_size_m2 ? `
-                <div class="detail-item">
-                    <strong>Land:</strong> ${property.land_size_m2} m²
-                </div>
-                ` : ''}
-                
-                ${property.building_size_m2 ? `
-                <div class="detail-item">
-                    <strong>Building:</strong> ${property.building_size_m2} m²
-                </div>
-                ` : ''}
-                
-                ${property.build_year ? `
-                <div class="detail-item">
-                    <strong>Built:</strong> ${property.build_year}
-                </div>
-                ` : ''}
-                
-                ${property.rooms ? `
-                <div class="detail-item">
-                    <strong>Rooms:</strong> ${property.rooms}
-                </div>
-                ` : ''}
-            </div>
-            
-            ${property.akiya_score ? `
+            ${prop.akiya_score ? `
             <div class="property-score">
-                <div class="score-label">Akiya Score: ${property.akiya_score}/100</div>
+                <div class="score-row">
+                    <span class="score-label">Akiya Score</span>
+                    <span class="score-value">${prop.akiya_score} / 100</span>
+                </div>
                 <div class="score-bar">
-                    <div class="score-fill" style="width: ${scorePercent}%"></div>
+                    <div class="score-bar-fill" style="width: ${prop.akiya_score}%"></div>
                 </div>
             </div>
             ` : ''}
             
-            <div class="property-costs">
-                <div class="cost-item">
-                    <span>Estimated renovation:</span>
-                    <strong>${renovationCost}</strong>
-                </div>
-                <div class="cost-item">
-                    <span>Estimated total:</span>
-                    <strong>${totalCost}</strong>
-                </div>
+            ${prop.estimated_total_cost ? `
+            <div class="property-cost">
+                <strong>Estimated total:</strong> ¥${formatNumber(prop.estimated_total_cost)}
             </div>
+            ` : ''}
             
             <div class="property-actions">
-                <button class="btn btn-primary" onclick="viewProperty('${property.source_url}')">
-                    View Property
-                </button>
-                <button class="btn btn-link" onclick="viewProperty('${property.source_url}')">
-                    Original Listing
-                </button>
+                <a href="/property/${prop.id}" class="btn btn-primary">View Property</a>
+                ${prop.source_url ? `<a href="${prop.source_url}" target="_blank" rel="noopener" class="btn btn-outline">Original Listing</a>` : ''}
             </div>
         </div>
     `;
@@ -186,49 +161,33 @@ function createPropertyCard(property) {
     return card;
 }
 
-// Open property link in new tab
 function viewProperty(url) {
-    if (url) {
-        window.open(url, '_blank');
-    }
+    if (url) window.open(url, '_blank');
 }
 
-// Show specific state (loading, error, empty, or results)
 function showState(state) {
-    const loadingState = document.getElementById('loading-state');
-    const errorState = document.getElementById('error-state');
-    const emptyState = document.getElementById('empty-state');
-    const resultsGrid = document.getElementById('results-grid');
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('error-state').classList.add('hidden');
+    document.getElementById('empty-state').classList.add('hidden');
+    document.getElementById('results-grid').classList.add('hidden');
     
-    // Hide all states
-    loadingState.classList.add('hidden');
-    errorState.classList.add('hidden');
-    emptyState.classList.add('hidden');
-    resultsGrid.classList.add('hidden');
-    
-    // Show the requested state
     switch(state) {
         case 'loading':
-            loadingState.classList.remove('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
             break;
         case 'error':
-            errorState.classList.remove('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
             break;
         case 'empty':
-            emptyState.classList.remove('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
             break;
         case 'results':
-            resultsGrid.classList.remove('hidden');
+            document.getElementById('results-grid').classList.remove('hidden');
             break;
     }
 }
 
-// Format price with commas
-function formatPrice(price) {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-// Format renovation cost range (placeholder for future implementation)
-function formatCostRange(min, max) {
-    return `¥${formatPrice(min)}–¥${formatPrice(max)}`;
+function formatNumber(num) {
+    if (num === null || num === undefined) return 'N/A';
+    return Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
