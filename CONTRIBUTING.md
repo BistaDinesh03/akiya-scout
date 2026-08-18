@@ -1,84 +1,133 @@
-\# Contributing to Akiya Scout
+# Contributing to Akiya Scout
 
+Thank you for your interest in contributing to Akiya Scout! We welcome contributions from everyone, whether it's bug reports, feature requests, documentation improvements, or code changes.
 
+## Getting Started
 
-\## Development Setup
+### Prerequisites
+- Python 3.8 or higher
+- Git
+- A GitHub account
 
+### Development Setup
 
+1. **Fork and clone the repository:**
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/akiya-scout.git
+   cd akiya-scout
+   ```
 
-1\. Fork and clone the repository
+2. **Create and activate a virtual environment:**
+   ```powershell
+   # Windows (PowerShell)
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+   ```
+   
+   ```bash
+   # macOS / Linux
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-2\. Create a virtual environment:
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   pip install -r requirements-dev.txt  # Development tools
+   ```
 
-&#x20;  ```powershell
+4. **Verify the setup:**
+   ```bash
+   python -m pytest  # Run tests to confirm everything works
+   ```
 
-&#x20;  python -m venv venv
+## Making Changes
 
-&#x20;  .\\venv\\Scripts\\Activate.ps1
+### Branch Naming
+Create a descriptive branch name for your work:
+- `feature/add-search-filters`
+- `bugfix/fix-api-timeout`
+- `docs/update-readme`
 
-Install dependencies:
+```bash
+git checkout -b feature/your-feature-name
+```
 
+### Code Style
+- Follow [PEP 8](https://pep8.org/) conventions
+- Use meaningful variable and function names
+- Write docstrings for all functions and classes
+- Keep lines under 100 characters where possible
 
+### Testing
+Before submitting a pull request:
+```bash
+# Run tests
+pytest
 
-powershell
+# Check code style
+flake8 src/
 
-pip install -r requirements.txt
+# Format code (if using black)
+black src/
+```
 
-Run tests:
+## Submitting Changes
 
+### Commit Messages
+Write clear, concise commit messages:
+- Use the imperative mood ("Add feature" not "Added feature")
+- Start with a capital letter
+- Keep the first line under 50 characters
+- Add details in the body if needed
 
+Examples:
+- `Add search filter for property age`
+- `Fix IndexError in location validation`
+- `Update installation instructions`
 
-powershell
+### Pull Requests
+1. Push your branch to your fork
+2. Open a pull request against the main repository
+3. Include a clear description of your changes
+4. Reference any related issues with `#issue-number`
+5. Ensure all tests pass
 
-python -m pytest
+**PR Title:** Keep it descriptive and concise  
+**PR Description:** Include:
+- What problem does this solve?
+- How does it solve it?
+- Any breaking changes?
+- Screenshots or examples (if applicable)
 
-Adding a New Scraper
+## Reporting Issues
 
-Create a new file in app/scrapers/sources/
+### Bugs
+Include:
+- Python version and OS
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Relevant logs or error messages
 
+### Feature Requests
+Describe:
+- The use case you're addressing
+- How it would work
+- Why it would be useful
+- Any alternative approaches you've considered
 
+## Code Review Process
 
-Extend BaseScraper or HTMLScraper
+- At least one maintainer review is required
+- We'll provide constructive feedback if changes are needed
+- Once approved, your PR will be merged
+- Thank you for helping improve Akiya Scout!
 
+## Questions?
 
+Feel free to open an issue with the `question` label or reach out to the maintainers directly.
 
-Implement: get\_source\_name(), fetch(), parse(), normalize()
+---
 
-
-
-Add fixture tests in tests/fixtures/
-
-
-
-Register the scraper in app/scrapers/registry.py
-
-
-
-Run tests
-
-
-
-Data Source Rules
-
-Only scrape publicly accessible data
-
-
-
-Respect robots.txt
-
-
-
-Do not bypass CAPTCHA, login, or anti-bot systems
-
-
-
-Do not invent or fake listings
-
-
-
-Preserve original source URLs
-
-
-
-Rate limit all requests
-
+**Happy contributing! 🎉**
