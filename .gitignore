@@ -40,6 +40,11 @@ dist/
 build/
 *.egg-info/
 
+# Database
+data/
+*.db
+*.sqlite
+
 # Temporary files
 *.pyc
 real_user_test.py

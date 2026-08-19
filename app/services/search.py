@@ -13,6 +13,7 @@ from app.scrapers.sources.saga_takeo import SagaTakeoScraper
 from app.scrapers.sources.another_source import AnotherSourceScraper
 from app.scrapers.sources.aso_kumamoto import AsoKumamotoScraper
 from app.services.valuation import valuation_engine, ValuationResult
+from app.db import load_properties, save_properties, get_property_count
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class PropertyCache:
 
 
 class SearchService:
-    """Search service with ranking, caching, and graceful failure."""
+    """Search service with database-backed storage and caching."""
     
     CACHE_KEY = "all_properties"
     
@@ -65,13 +66,37 @@ class SearchService:
         ]
     
     def get_all_properties(self, force_refresh: bool = False) -> List[Property]:
-        """Get all properties from enabled sources with graceful failure."""
+        """
+        Get all properties.
+        First tries cache, then database, then live scraping.
+        """
+        # Check cache first
         if not force_refresh:
             cached = self.cache.get(self.CACHE_KEY)
             if cached is not None:
                 logger.info(f"Returning {len(cached)} properties from cache")
                 return cached
         
+        # Try database
+        db_properties = load_properties()
+        if db_properties:
+            logger.info(f"Loaded {len(db_properties)} properties from database")
+            self.cache.set(self.CACHE_KEY, db_properties)
+            return db_properties
+        
+        # Fallback: live scraping (for local dev)
+        logger.info("Database empty, attempting live scraping")
+        all_properties = self._scrape_all_sources()
+        
+        if all_properties:
+            save_properties(all_properties)
+            logger.info(f"Saved {len(all_properties)} properties to database")
+        
+        self.cache.set(self.CACHE_KEY, all_properties)
+        return all_properties
+    
+    def _scrape_all_sources(self) -> List[Property]:
+        """Scrape all enabled sources with graceful failure."""
         all_properties = []
         failed_sources = []
         
@@ -91,38 +116,26 @@ class SearchService:
                     logger.error(f"Source {source_name} failed: {e}")
                     failed_sources.append(source_name)
         
-        if failed_sources:
-            logger.warning(f"Failed sources: {failed_sources}")
-        else:
-            logger.info("All sources succeeded")
-        
-        unique_properties = self.deduplicate(all_properties)
-        logger.info(f"Total unique properties: {len(unique_properties)}")
-        self.cache.set(self.CACHE_KEY, unique_properties)
-        
-        return unique_properties
+        unique = self.deduplicate(all_properties)
+        return unique
     
     def _scrape_source(self, scraper_class) -> List[Property]:
-        """Scrape a single source with error handling and detailed logging."""
+        """Scrape a single source with error handling."""
         scraper = None
         source_name = scraper_class.__name__
         logger.info(f"[SOURCE: {source_name}] Request started")
         
         try:
             scraper = scraper_class()
-            logger.info(f"[SOURCE: {source_name}] Scraper created")
-            
             properties = scraper.scrape()
             logger.info(f"[SOURCE: {source_name}] Found {len(properties)} listings")
             return properties
-            
         except Exception as e:
             logger.error(f"[SOURCE: {source_name}] FAILED: {type(e).__name__}: {e}")
             return []
         finally:
             if scraper:
                 scraper.close()
-                logger.info(f"[SOURCE: {source_name}] Scraper closed")
     
     def deduplicate(self, properties: List[Property]) -> List[Property]:
         """Deduplicate properties by ID."""
@@ -206,9 +219,7 @@ class SearchService:
         properties: List[Property],
         sort: Optional[str] = None,
     ) -> List[Property]:
-        """
-        Rank properties by various criteria.
-        """
+        """Rank properties by various criteria."""
         if sort is None or sort == 'newest':
             return sorted(properties, key=lambda p: p.collected_at, reverse=True)
         
