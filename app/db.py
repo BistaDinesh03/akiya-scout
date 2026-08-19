@@ -3,7 +3,6 @@ SQLite database module for Akiya Scout.
 Stores scraped property listings for production use.
 """
 import sqlite3
-import json
 import logging
 from typing import List, Optional
 from pathlib import Path
@@ -11,22 +10,33 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Default database path
+# Default database path - relative to project root
 DEFAULT_DB_PATH = Path(__file__).parent.parent / "data" / "properties.db"
 
 
 def get_db_path() -> Path:
-    """Get database path from environment or default."""
+    """
+    Get database path from environment or default.
+    Uses AKIYA_DB_PATH if set, otherwise uses default project path.
+    """
     import os
     db_path = os.getenv("AKIYA_DB_PATH", str(DEFAULT_DB_PATH))
-    path = Path(db_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return path
+    return Path(db_path)
+
+
+def database_exists(db_path: Optional[Path] = None) -> bool:
+    """Check if database file exists and has data."""
+    path = db_path or get_db_path()
+    return path.exists() and path.stat().st_size > 0
 
 
 def init_db(db_path: Optional[Path] = None) -> None:
-    """Create database tables if they don't exist."""
+    """
+    Create database tables if they don't exist.
+    Does NOT overwrite existing data.
+    """
     path = db_path or get_db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
     
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
@@ -59,12 +69,12 @@ def init_db(db_path: Optional[Path] = None) -> None:
     
     conn.commit()
     conn.close()
-    logger.info(f"Database initialized at {path}")
 
 
 def save_properties(properties: list, db_path: Optional[Path] = None) -> int:
     """
-    Save properties to database.
+    Save properties to database using INSERT OR REPLACE.
+    Does NOT delete existing data.
     Returns number of properties saved.
     """
     path = db_path or get_db_path()
@@ -112,19 +122,23 @@ def save_properties(properties: list, db_path: Optional[Path] = None) -> int:
     
     conn.commit()
     conn.close()
-    logger.info(f"Saved {saved} properties to database")
+    logger.info(f"Saved {saved} properties to database at {path}")
     return saved
 
 
-def load_properties(db_path: Optional[Path] = None) -> list:
+def load_properties(db_path: Optional[Path] = None) -> List:
     """
     Load all properties from database.
-    Returns list of Property objects.
+    Returns empty list if database doesn't exist (does NOT create empty DB).
     """
     from app.models import Property
     
     path = db_path or get_db_path()
-    init_db(path)
+    
+    # Check if database exists - do NOT create empty database silently
+    if not database_exists(path):
+        logger.warning(f"Database not found at {path}. Returning empty list.")
+        return []
     
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
@@ -169,9 +183,11 @@ def load_properties(db_path: Optional[Path] = None) -> list:
 
 
 def get_property_count(db_path: Optional[Path] = None) -> int:
-    """Get count of properties in database."""
+    """Get count of properties in database. Returns 0 if DB missing."""
     path = db_path or get_db_path()
-    init_db(path)
+    
+    if not database_exists(path):
+        return 0
     
     conn = sqlite3.connect(path)
     cursor = conn.cursor()

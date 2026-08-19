@@ -7,13 +7,9 @@ import time
 import re
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.models import Property
-from app.scrapers.sources.saga_takeo import SagaTakeoScraper
-from app.scrapers.sources.another_source import AnotherSourceScraper
-from app.scrapers.sources.aso_kumamoto import AsoKumamotoScraper
 from app.services.valuation import valuation_engine, ValuationResult
-from app.db import load_properties, save_properties, get_property_count
+from app.db import load_properties
 
 logger = logging.getLogger(__name__)
 
@@ -54,21 +50,17 @@ class PropertyCache:
 
 
 class SearchService:
-    """Search service with database-backed storage and caching."""
+    """Search service that reads from SQLite database."""
     
     CACHE_KEY = "all_properties"
     
     def __init__(self, cache_ttl: int = 600):
         self.cache = PropertyCache(ttl_seconds=cache_ttl)
-        self.enabled_sources = [
-            SagaTakeoScraper,
-            AsoKumamotoScraper,
-        ]
     
     def get_all_properties(self, force_refresh: bool = False) -> List[Property]:
         """
-        Get all properties.
-        First tries cache, then database, then live scraping.
+        Get all properties from database only.
+        No live scraping during normal requests.
         """
         # Check cache first
         if not force_refresh:
@@ -77,65 +69,12 @@ class SearchService:
                 logger.info(f"Returning {len(cached)} properties from cache")
                 return cached
         
-        # Try database
+        # Load from database only
         db_properties = load_properties()
-        if db_properties:
-            logger.info(f"Loaded {len(db_properties)} properties from database")
-            self.cache.set(self.CACHE_KEY, db_properties)
-            return db_properties
+        logger.info(f"Loaded {len(db_properties)} properties from database")
         
-        # Fallback: live scraping (for local dev)
-        logger.info("Database empty, attempting live scraping")
-        all_properties = self._scrape_all_sources()
-        
-        if all_properties:
-            save_properties(all_properties)
-            logger.info(f"Saved {len(all_properties)} properties to database")
-        
-        self.cache.set(self.CACHE_KEY, all_properties)
-        return all_properties
-    
-    def _scrape_all_sources(self) -> List[Property]:
-        """Scrape all enabled sources with graceful failure."""
-        all_properties = []
-        failed_sources = []
-        
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = {}
-            for scraper_class in self.enabled_sources:
-                future = executor.submit(self._scrape_source, scraper_class)
-                futures[future] = scraper_class.__name__
-            
-            for future in as_completed(futures):
-                source_name = futures[future]
-                try:
-                    properties = future.result()
-                    all_properties.extend(properties)
-                    logger.info(f"Scraped {len(properties)} from {source_name}")
-                except Exception as e:
-                    logger.error(f"Source {source_name} failed: {e}")
-                    failed_sources.append(source_name)
-        
-        unique = self.deduplicate(all_properties)
-        return unique
-    
-    def _scrape_source(self, scraper_class) -> List[Property]:
-        """Scrape a single source with error handling."""
-        scraper = None
-        source_name = scraper_class.__name__
-        logger.info(f"[SOURCE: {source_name}] Request started")
-        
-        try:
-            scraper = scraper_class()
-            properties = scraper.scrape()
-            logger.info(f"[SOURCE: {source_name}] Found {len(properties)} listings")
-            return properties
-        except Exception as e:
-            logger.error(f"[SOURCE: {source_name}] FAILED: {type(e).__name__}: {e}")
-            return []
-        finally:
-            if scraper:
-                scraper.close()
+        self.cache.set(self.CACHE_KEY, db_properties)
+        return db_properties
     
     def deduplicate(self, properties: List[Property]) -> List[Property]:
         """Deduplicate properties by ID."""

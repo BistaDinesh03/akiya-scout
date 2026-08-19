@@ -40,11 +40,6 @@ dist/
 build/
 *.egg-info/
 
-# Database
-data/
-*.db
-*.sqlite
-
 # Temporary files
 *.pyc
 real_user_test.py
@@ -55,3 +50,7 @@ test_*_ssl.py
 test_scrape.py
 investigate_*.py
 verify_*.py
+
+# NOTE: data/properties.db is intentionally TRACKED for production.
+# Run `python collect_data.py` locally to update the database,
+# then commit and push to deploy updated listings.

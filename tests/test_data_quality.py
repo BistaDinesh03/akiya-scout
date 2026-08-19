@@ -59,12 +59,11 @@ class TestDataQuality:
             create_real_property("real-3", source_url="https://takeo-ijyu.jp/bank/3/"),
         ]
         
-        # Check unique URLs
         urls = [p.source_url for p in props]
         unique_urls = set(urls)
         
         assert len(urls) == 3
-        assert len(unique_urls) == 2  # Two unique URLs
+        assert len(unique_urls) == 2
     
     def test_required_fields_present(self):
         """Test that real listings have required fields."""
@@ -103,7 +102,6 @@ class TestDataQuality:
         
         all_props = real_props + test_props
         
-        # Filter for real listings only
         real_only = [p for p in all_props if p.source_name == "saga_takeo"]
         
         assert len(real_only) == 1
@@ -131,14 +129,11 @@ class TestCacheRefresh:
         
         cache.set("test_key", props)
         
-        # Should be cached
         assert cache.get("test_key") is not None
         
-        # Wait for TTL
         import time
         time.sleep(1.1)
         
-        # Should be expired
         assert cache.get("test_key") is None
     
     def test_cache_timestamp_updates(self):
@@ -170,15 +165,16 @@ class TestSourceIsolation:
         assert result == []
         scraper.close()
     
-    def test_failed_source_does_not_corrupt(self):
-        """Test that failed source doesn't add data."""
+    def test_search_service_reads_database_only(self):
+        """Test that search service reads from database only."""
         service = SearchService()
         
-        # Two enabled sources: SagaTakeo and AsoKumamoto
-        assert len(service.enabled_sources) == 2
-        source_names = [s.__name__ for s in service.enabled_sources]
-        assert "SagaTakeoScraper" in source_names
-        assert "AsoKumamotoScraper" in source_names
+        # Search service no longer has enabled_sources (reads from DB)
+        assert not hasattr(service, 'enabled_sources')
+        
+        # Verify it loads from database
+        properties = service.get_all_properties()
+        assert isinstance(properties, list)
     
     def test_access_restricted_sources_return_empty(self):
         """Test that access-restricted sources return empty."""
